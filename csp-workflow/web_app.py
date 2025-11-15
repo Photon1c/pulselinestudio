@@ -31,7 +31,7 @@ APP_SETTINGS = load_settings()
 app = Flask(__name__, static_folder="static", template_folder="templates")
 
 
-@app.route("/threejs")
+@app.route("/threejs/")
 def threejs_portal():
     scenario_meta = {
         key: {"label": scenario.label, "description": scenario.description}
@@ -59,7 +59,9 @@ def simulate():
     return jsonify(result), 200
 
 
-@app.route("/api/config", methods=["GET"])
+# Expose config for the frozen site with a friendly extension so Frozen-Flask
+# emits config.json instead of a bare "config" file.
+@app.route("/config.json", methods=["GET"])
 def config():
     return jsonify(APP_SETTINGS), 200
 

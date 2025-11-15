@@ -1,15 +1,9 @@
 [build]
-  command = "pip install -r requirements.txt"
-  publish = "static"
+  command = "pip install -r requirements.txt && python freeze.py"
+  publish = "build"
 
 [dev]
   command = "python web_app.py"
   targetPort = 5001
   port = 8888
-
-[[redirects]]
-  from = "/*"
-  to = "http://localhost:5001/:splat"
-  status = 200
-  force = true
 

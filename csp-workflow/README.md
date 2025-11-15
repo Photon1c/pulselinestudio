@@ -11,8 +11,9 @@ A command center where staffing, queue pressure, and live production health puls
 csp-workflow/
 ├─ analyzer.py              # Utilization + stats helpers
 ├─ csp_solver.py            # Greedy longest-processing-time allocator
+├─ freeze.py                # Frozen-Flask builder that outputs /build
 ├─ main.py                  # CLI runner that reuses the simulator pipeline
-├─ netlify.toml             # Netlify Dev / proxy config
+├─ netlify.toml             # Netlify build config (static-only)
 ├─ requirements.txt
 ├─ settings.json            # UI + API defaults (assistants, tasks, etc.)
 ├─ static/
@@ -21,7 +22,7 @@ csp-workflow/
 ├─ templates/
 │  ├─ landing.html
 │  └─ threejs.html
-├─ web_app.py               # Flask wires everything together
+├─ web_app.py               # Flask wires everything together (dev preview)
 └─ workflow_simulator.py    # Scenario definitions + orchestration
 ```
 
@@ -32,9 +33,21 @@ cd AGIworld/csp-workflow
 python -m venv .venv
 .venv\Scripts\activate          # or `source .venv/bin/activate` on macOS/Linux
 pip install -r requirements.txt
-python web_app.py
+python web_app.py               # dev server with live templates
 # Navigate to http://localhost:5001/threejs
 ```
+
+### Freezing to a static site
+
+Pulseline Studio now runs entirely in the browser (simulation logic was ported to JavaScript), so you can generate a Netlify-ready bundle via Frozen-Flask:
+
+```bash
+pip install -r requirements.txt
+python freeze.py
+# Static assets land in ./build
+```
+
+Set Netlify’s publish directory to `build` (or run `netlify dev --dir build` locally).
 
 ### Updating defaults
 
@@ -59,30 +72,15 @@ The conveyor belt, backlog cubes, dispatch beams, and clearing pulses animate ba
 
 ## Deployment
 
-### Local Netlify preview
+### Netlify build
 
-`netlify.toml` is set up so `netlify dev` spins up Flask for you:
+`netlify.toml` now runs:
 
-```bash
-netlify dev
-# Netlify proxies http://localhost:8888 -> Flask on port 5001
+```
+pip install -r requirements.txt && python freeze.py
 ```
 
-The `[dev]` block runs `python web_app.py`, while the redirect stanza pipes every request through the Flask server.
-
-### Production hosting
-
-1. Deploy the Flask service to your preferred host (Render, Railway, Fly.io, etc.) and note its public URL.
-2. Update the `[[redirects]]` `to =` field in `netlify.toml` to point to that URL instead of `http://localhost:5001`.
-3. Install the Netlify CLI and deploy the static shell:
-
-   ```bash
-   netlify deploy --prod --dir static
-   ```
-
-   Netlify serves the CSS/JS bundle from `static/` and transparently proxies all routes to your Flask backend using the redirect rule.
-
-Alternatively, skip Netlify entirely and run `gunicorn -b 0.0.0.0:5001 web_app:app` wherever you typically host Python services.
+and publishes the generated `build/` folder. No Netlify Functions or proxy redirects are required anymore—everything (including the workflow simulator) happens in the browser. Use `netlify deploy --prod --dir build` if you prefer manual control.
 
 ## Next ideas
 
