@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workflow Dynamics Lab</title>
+    <link rel="stylesheet" href="/static/css/threejs.css" />
+  </head>
+  <body>
+    <div class="flash-title" id="flashTitle">Pulseline Studio</div>
+    <div class="overlay">
+      <section class="panel">
+        <h2>Workflow Controls</h2>
+        <div class="control-grid">
+          <label>
+            Assistants
+            <input
+              type="number"
+              id="agentsInput"
+              min="1"
+              max="24"
+              value="8"
+            />
+          </label>
+          <label>
+            Tasks
+            <input
+              type="number"
+              id="tasksInput"
+              min="10"
+              max="2000"
+              value="220"
+              step="10"
+            />
+          </label>
+          <label>
+            Max Minutes
+            <input
+              type="number"
+              id="minutesInput"
+              min="60"
+              max="720"
+              value="480"
+              step="30"
+            />
+          </label>
+          <label>
+            Mode
+            <select id="modeSelect">
+              
+              <option value="standard" selected>
+                Balanced Ops
+              </option>
+              
+              <option value="focus" >
+                Deep Work Pods
+              </option>
+              
+              <option value="lucy" >
+                I Love Lucy
+              </option>
+              
+            </select>
+          </label>
+        </div>
+        <div class="actions">
+          <button class="btn" id="playBtn">Play</button>
+          <button class="btn secondary" id="pauseBtn">Pause</button>
+          <button class="btn accent" id="spikeBtn">Workload Spike</button>
+        </div>
+        <label class="slider-label">
+          Simulation Speed
+          <span id="speedValue">1.0x</span>
+          <input
+            type="range"
+            id="speedSlider"
+            min="0.5"
+            max="2"
+            step="0.1"
+            value="1"
+          />
+        </label>
+        <p class="legend">Utilization: calm → focus → overloaded</p>
+        
+        
+        <p class="status-pill" id="statusPill">
+          <span>Ready</span>
+           · Balanced Ops
+        </p>
+      </section>
+
+      <section class="panel metrics-panel">
+        <h3>Live Metrics</h3>
+        <div class="metrics" id="metricsPanel">
+          <div class="metric">
+            <span>Avg Utilization</span>
+            <strong id="metric-util">0%</strong>
+          </div>
+          <div class="metric">
+            <span>Backlog Minutes</span>
+            <strong id="metric-backlog">0</strong>
+          </div>
+          <div class="metric">
+            <span>Backlog Tasks</span>
+            <strong id="metric-backlog-count">0</strong>
+          </div>
+          <div class="metric">
+            <span>Arrival Rate</span>
+            <strong id="metric-arrival">0/min</strong>
+          </div>
+          <div class="metric">
+            <span>Throughput</span>
+            <strong id="metric-throughput">0%</strong>
+          </div>
+          <div class="metric">
+            <span>Active Assistants</span>
+            <strong id="metric-assistants">0 / 0</strong>
+          </div>
+          <div class="metric">
+            <span>Belt Speed</span>
+            <strong id="metric-belt">1x</strong>
+          </div>
+          <div class="metric">
+            <span>Flow Delta</span>
+            <strong id="metric-flow">0</strong>
+          </div>
+        </div>
+        <label class="slider-label compact">
+          Belt Speed
+          <span id="beltValue">
+            1x
+          </span>
+          <input
+            type="range"
+            id="beltSlider"
+            min="0.5"
+            max="2.5"
+            step="0.1"
+            value="1"
+          />
+        </label>
+        <div class="cycle-bar">
+          <div class="cycle-bar__label">Production Cycle</div>
+          <div class="cycle-bar__track">
+            <div class="cycle-bar__fill" id="cycleBarFill"></div>
+          </div>
+        </div>
+        <div class="assistants-panel" id="assistantsPanel">
+          <p>Assistants will appear here after you run a simulation.</p>
+        </div>
+      </section>
+
+      <section class="panel controls-help" id="instructionsPanel" aria-hidden="true">
+        <h3>Navigation</h3>
+        <p>
+          Mouse drag = orbit · Scroll = zoom · Right-drag = pan
+          <br />
+          Keyboard: WASD to strafe, QE to elevate, R resets focus.
+          <br />
+          Use Play/Pause or press P to pause. Press I to hide/show this card.
+        </p>
+      </section>
+      <div class="instructions-alert">Press I for instructions</div>
+    </div>
+
+    <div id="viewport"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script>
+      window.SCENARIO_META = {"focus": {"description": "Fewer high-impact, longer tasks that test endurance instead of volume.", "label": "Deep Work Pods"}, "lucy": {"description": "Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.", "label": "I Love Lucy"}, "standard": {"description": "Classic operations floor where inflow roughly matches processing capacity.", "label": "Balanced Ops"}};
+      window.APP_CONFIG = {"defaults": {"max_minutes": 480, "mode": "standard", "num_agents": 8, "num_tasks": 220}, "limits": {"max_agents": 24, "max_minutes": 720, "max_tasks": 2000, "min_agents": 1, "min_minutes": 60, "min_tasks": 10}, "ui": {"auto_run_on_load": true, "speed_default": 1, "status_ready": "Ready \u00b7 Balanced Ops", "title": "Workflow Dynamics Lab"}};
+    </script>
+    <script type="module" src="/static/js/threejs_scene.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1 @@
+{"defaults":{"max_minutes":480,"mode":"standard","num_agents":8,"num_tasks":220},"limits":{"max_agents":24,"max_minutes":720,"max_tasks":2000,"min_agents":1,"min_minutes":60,"min_tasks":10},"ui":{"auto_run_on_load":true,"speed_default":1,"status_ready":"Ready \u00b7 Balanced Ops","title":"Workflow Dynamics Lab"}}
