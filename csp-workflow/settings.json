@@ -2,7 +2,7 @@
   "defaults": {
     "num_agents": 8,
     "num_tasks": 220,
-    "max_minutes": 480,
+    "max_minutes": 450,
     "mode": "standard"
   },
   "limits": {

@@ -145,6 +145,7 @@ export function runWorkflowSimulation({
   mode = "standard",
   beltMultiplier = 1,
 }) {
+  console.log("runWorkflowSimulation called with:", { numAssistants, numTasks, maxMinutes, mode, beltMultiplier });
   const scenario = SCENARIOS[mode] || SCENARIOS.standard;
   const beltFactor = Math.max(0.2, Number(beltMultiplier) || 1);
   const adjustedTasks = Math.max(1, Math.round(numTasks * scenario.task_multiplier * beltFactor));
@@ -154,6 +155,11 @@ export function runWorkflowSimulation({
     numAssistants,
     maxMinutes
   );
+  console.log("assignTasksToAssistants returned:", {
+    assistantsLength: assistants.length,
+    assistantTimesLength: assistantTimes.length,
+    backlogLength: backlog.length
+  });
   const stats = analyzeAssignments(assistantTimes, maxMinutes);
   const timeline = buildTimeline(assistants);
   const backlogMinutes = backlog.reduce((sum, val) => sum + val, 0);
@@ -170,6 +176,13 @@ export function runWorkflowSimulation({
     total_time: assistantTimes[idx],
     utilization: stats.utilization_by_agent[idx] || 0,
   }));
+
+  console.log("runWorkflowSimulation returning:", {
+    agentsPayloadLength: agentsPayload.length,
+    requestedAgents: numAssistants,
+    backlogCount: backlog.length,
+    backlogMinutes: backlogMinutes
+  });
 
   return {
     parameters: {

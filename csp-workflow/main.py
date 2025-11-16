@@ -14,7 +14,7 @@ def load_settings() -> dict:
         return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
     except FileNotFoundError:
         return {
-            "defaults": {"num_agents": 6, "num_tasks": 120, "max_minutes": 480, "mode": "standard"},
+            "defaults": {"num_agents": 6, "num_tasks": 120, "max_minutes": 450, "mode": "standard"},
         }
 
 

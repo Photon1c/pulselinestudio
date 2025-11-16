@@ -7,10 +7,19 @@
     <link rel="stylesheet" href="/static/css/threejs.css" />
   </head>
   <body>
-    <div class="flash-title" id="flashTitle">Pulseline Studio</div>
-    <div class="overlay">
-      <section class="panel">
-        <h2>Workflow Controls</h2>
+    <div class="flash-title">
+      <span class="flash-title__text">Pulseline Studio</span>
+      <span class="flash-title__orb flash-title__orb--left"></span>
+      <span class="flash-title__orb flash-title__orb--right"></span>
+    </div>
+    <div class="top-hint">Press I for instructions</div>
+    <button class="overlay-toggle" id="overlayToggle" aria-label="Toggle dashboard">◧</button>
+    <div class="overlay" id="overlay">
+      <section class="panel panel--controls">
+        <header class="panel__header">
+          <h2>Workflow Controls</h2>
+          <button class="panel__collapse" id="controlsCollapse" aria-label="Collapse workflow controls">&#8211;</button>
+        </header>
         <div class="control-grid">
           <label>
             Assistants
@@ -40,7 +49,7 @@
               id="minutesInput"
               min="60"
               max="720"
-              value="480"
+              value="450"
               step="30"
             />
           </label>
@@ -64,7 +73,7 @@
           </label>
         </div>
         <div class="actions">
-          <button class="btn" id="playBtn">Play</button>
+          <button class="btn" id="playBtn">Run</button>
           <button class="btn secondary" id="pauseBtn">Pause</button>
           <button class="btn accent" id="spikeBtn">Workload Spike</button>
         </div>
@@ -75,18 +84,22 @@
             type="range"
             id="speedSlider"
             min="0.5"
-            max="2"
+            max="8"
             step="0.1"
             value="1"
           />
         </label>
-        <p class="legend">Utilization: calm → focus → overloaded</p>
+        <div class="control-hint">
+          <p class="legend">Utilization: calm → focus → overloaded</p>
+          <span class="instructions-pill">Press I for instructions</span>
+        </div>
         
         
         <p class="status-pill" id="statusPill">
           <span>Ready</span>
            · Balanced Ops
         </p>
+        <!-- Removed duplicate backlog metrics from controls to avoid confusion -->
       </section>
 
       <section class="panel metrics-panel">
@@ -103,6 +116,10 @@
           <div class="metric">
             <span>Backlog Tasks</span>
             <strong id="metric-backlog-count">0</strong>
+          </div>
+          <div class="metric">
+            <span>Tasks / Assistant</span>
+            <strong id="metric-tasks-assistant">0</strong>
           </div>
           <div class="metric">
             <span>Arrival Rate</span>
@@ -157,13 +174,13 @@
           <br />
           Keyboard: WASD to strafe, QE to elevate, R resets focus.
           <br />
-          Use Play/Pause or press P to pause. Press I to hide/show this card.
+          Use Run/Pause or press P to pause. Press I to hide/show this card.
         </p>
       </section>
-      <div class="instructions-alert">Press I for instructions</div>
     </div>
 
     <div id="viewport"></div>
+    <div class="fps-counter" id="fpsCounter">FPS: 0</div>
 
     <script type="importmap">
       {
@@ -175,7 +192,7 @@
     </script>
     <script>
       window.SCENARIO_META = {"focus": {"description": "Fewer high-impact, longer tasks that test endurance instead of volume.", "label": "Deep Work Pods"}, "lucy": {"description": "Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.", "label": "I Love Lucy"}, "standard": {"description": "Classic operations floor where inflow roughly matches processing capacity.", "label": "Balanced Ops"}};
-      window.APP_CONFIG = {"defaults": {"max_minutes": 480, "mode": "standard", "num_agents": 8, "num_tasks": 220}, "limits": {"max_agents": 24, "max_minutes": 720, "max_tasks": 2000, "min_agents": 1, "min_minutes": 60, "min_tasks": 10}, "ui": {"auto_run_on_load": true, "speed_default": 1, "status_ready": "Ready \u00b7 Balanced Ops", "title": "Workflow Dynamics Lab"}};
+      window.APP_CONFIG = {"defaults": {"max_minutes": 450, "mode": "standard", "num_agents": 8, "num_tasks": 220}, "limits": {"max_agents": 24, "max_minutes": 720, "max_tasks": 2000, "min_agents": 1, "min_minutes": 60, "min_tasks": 10}, "ui": {"auto_run_on_load": true, "speed_default": 1, "status_ready": "Ready \u00b7 Balanced Ops", "title": "Workflow Dynamics Lab"}};
     </script>
     <script type="module" src="/static/js/threejs_scene.js"></script>
   </body>

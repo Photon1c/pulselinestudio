@@ -7,10 +7,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/threejs.css') }}" />
   </head>
   <body>
-    <div class="flash-title" id="flashTitle">Pulseline Studio</div>
-    <div class="overlay">
-      <section class="panel">
-        <h2>Workflow Controls</h2>
+    <div class="flash-title">
+      <span class="flash-title__text">Pulseline Studio</span>
+      <span class="flash-title__orb flash-title__orb--left"></span>
+      <span class="flash-title__orb flash-title__orb--right"></span>
+    </div>
+    <div class="top-hint">Press I for instructions</div>
+    <button class="overlay-toggle" id="overlayToggle" aria-label="Toggle dashboard">◧</button>
+    <div class="overlay" id="overlay">
+      <section class="panel panel--controls">
+        <header class="panel__header">
+          <h2>Workflow Controls</h2>
+          <button class="panel__collapse" id="controlsCollapse" aria-label="Collapse workflow controls">&#8211;</button>
+        </header>
         <div class="control-grid">
           <label>
             Assistants
@@ -28,7 +37,7 @@
               type="number"
               id="tasksInput"
               min="{{ config.limits.min_tasks if config and config.limits else 10 }}"
-              max="{{ config.limits.max_tasks if config and config.limits else 2000 }}"
+              max="{{ config.limits.max_tasks if config and config.limits else 50000 }}"
               value="{{ config.defaults.num_tasks if config and config.defaults else 220 }}"
               step="10"
             />
@@ -56,7 +65,7 @@
           </label>
         </div>
         <div class="actions">
-          <button class="btn" id="playBtn">Play</button>
+          <button class="btn" id="playBtn">Run</button>
           <button class="btn secondary" id="pauseBtn">Pause</button>
           <button class="btn accent" id="spikeBtn">Workload Spike</button>
         </div>
@@ -67,18 +76,22 @@
             type="range"
             id="speedSlider"
             min="0.5"
-            max="2"
+            max="8"
             step="0.1"
             value="{{ config.ui.speed_default if config and config.ui and config.ui.speed_default else 1 }}"
           />
         </label>
-        <p class="legend">Utilization: calm → focus → overloaded</p>
+        <div class="control-hint">
+          <p class="legend">Utilization: calm → focus → overloaded</p>
+          <span class="instructions-pill">Press I for instructions</span>
+        </div>
         {% set ready_status = config.ui.status_ready if config and config.ui and config.ui.status_ready else "Ready · Balanced Ops" %}
         {% set ready_parts = ready_status.split("·") %}
         <p class="status-pill" id="statusPill">
           <span>{{ ready_parts[0].strip() }}</span>
           {% if ready_parts|length > 1 %} · {{ ready_parts[1].strip() }}{% endif %}
         </p>
+        <!-- Removed duplicate backlog metrics from controls to avoid confusion -->
       </section>
 
       <section class="panel metrics-panel">
@@ -95,6 +108,10 @@
           <div class="metric">
             <span>Backlog Tasks</span>
             <strong id="metric-backlog-count">0</strong>
+          </div>
+          <div class="metric">
+            <span>Tasks / Assistant</span>
+            <strong id="metric-tasks-assistant">0</strong>
           </div>
           <div class="metric">
             <span>Arrival Rate</span>
@@ -149,13 +166,13 @@
           <br />
           Keyboard: WASD to strafe, QE to elevate, R resets focus.
           <br />
-          Use Play/Pause or press P to pause. Press I to hide/show this card.
+          Use Run/Pause or press P to pause. Press I to hide/show this card.
         </p>
       </section>
-      <div class="instructions-alert">Press I for instructions</div>
     </div>
 
     <div id="viewport"></div>
+    <div class="fps-counter" id="fpsCounter">FPS: 0</div>
 
     <script type="importmap">
       {
