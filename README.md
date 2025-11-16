@@ -1,8 +1,8 @@
 # Pulseline Studio
 
-![pulse_line](csp-workflow/media/concept_art.png)
+![pulse_line](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/media/concept_art.png)
 
-[Project Read Me](csp-workflow/README.md)
+[Project Read Me](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/README.md)
 
 ## Next ideas
 
