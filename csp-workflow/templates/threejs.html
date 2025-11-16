@@ -95,8 +95,12 @@
       </section>
 
       <section class="panel metrics-panel">
-        <h3>Live Metrics</h3>
-        <div class="metrics" id="metricsPanel">
+        <div class="panel__header">
+          <h3>Live Metrics</h3>
+          <button class="panel__collapse" id="collapseMetricsBtn"></button>
+        </div>
+        <div class="metrics-panel__content">
+          <div class="metrics" id="metricsPanel">
           <div class="metric">
             <span>Avg Utilization</span>
             <strong id="metric-util">0%</strong>
@@ -132,6 +136,7 @@
           <div class="metric">
             <span>Flow Delta</span>
             <strong id="metric-flow">0</strong>
+          </div>
           </div>
         </div>
         <label class="slider-label compact">
