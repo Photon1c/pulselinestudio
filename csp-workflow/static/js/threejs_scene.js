@@ -673,7 +673,13 @@ function setupOverlayControls() {
   if (controlsCollapseBtn && controlsPanel) {
     controlsCollapseBtn.addEventListener("click", () => {
       controlsPanel.classList.toggle("panel--collapsed");
-      controlsCollapseBtn.textContent = controlsPanel.classList.contains("panel--collapsed") ? "+" : "–";
+    });
+  }
+  const metricsCollapseBtn = document.getElementById("collapseMetricsBtn");
+  const metricsPanel = document.querySelector(".metrics-panel");
+  if (metricsCollapseBtn && metricsPanel) {
+    metricsCollapseBtn.addEventListener("click", () => {
+      metricsPanel.classList.toggle("panel--collapsed");
     });
   }
 }
@@ -728,13 +734,69 @@ function handleKeyboard(delta) {
   const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
   const up = new THREE.Vector3(0, 1, 0);
   const speed = 15 * delta;
+  const orbitSpeed = 2.5 * delta; // Rotation speed for arrow keys
 
+  // WASD movement
   if (keyState["KeyW"]) move.addScaledVector(forward, speed);
   if (keyState["KeyS"]) move.addScaledVector(forward, -speed);
   if (keyState["KeyA"]) move.addScaledVector(right, -speed);
   if (keyState["KeyD"]) move.addScaledVector(right, speed);
   if (keyState["KeyQ"]) move.addScaledVector(up, -speed);
   if (keyState["KeyE"]) move.addScaledVector(up, speed);
+
+  // Arrow keys for camera rotation/orbiting
+  if (keyState["ArrowLeft"]) {
+    // Rotate left around target
+    const angle = orbitSpeed;
+    const axis = new THREE.Vector3(0, 1, 0);
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  }
+  if (keyState["ArrowRight"]) {
+    // Rotate right around target
+    const angle = -orbitSpeed;
+    const axis = new THREE.Vector3(0, 1, 0);
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  }
+  if (keyState["ArrowUp"]) {
+    // Rotate up (pitch)
+    const angle = orbitSpeed * 0.6;
+    const rightVec = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const upVec = new THREE.Vector3(0, 1, 0);
+    const forwardVec = new THREE.Vector3().crossVectors(rightVec, upVec).normalize();
+    const axis = forwardVec;
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    // Limit vertical rotation
+    const newOffset = new THREE.Vector3().subVectors(camera.position.clone().add(offset), controls.target);
+    const verticalAngle = Math.atan2(newOffset.y, Math.sqrt(newOffset.x * newOffset.x + newOffset.z * newOffset.z));
+    if (verticalAngle < Math.PI / 2.5 && verticalAngle > -Math.PI / 2.5) {
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+  }
+  if (keyState["ArrowDown"]) {
+    // Rotate down (pitch)
+    const angle = -orbitSpeed * 0.6;
+    const rightVec = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const upVec = new THREE.Vector3(0, 1, 0);
+    const forwardVec = new THREE.Vector3().crossVectors(rightVec, upVec).normalize();
+    const axis = forwardVec;
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    // Limit vertical rotation
+    const newOffset = new THREE.Vector3().subVectors(camera.position.clone().add(offset), controls.target);
+    const verticalAngle = Math.atan2(newOffset.y, Math.sqrt(newOffset.x * newOffset.x + newOffset.z * newOffset.z));
+    if (verticalAngle < Math.PI / 2.5 && verticalAngle > -Math.PI / 2.5) {
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+  }
 
   if (move.lengthSq() > 0) {
     camera.position.add(move);
