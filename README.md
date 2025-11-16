@@ -2,7 +2,9 @@
 
 ![pulse_line](csp-workflow/media/concept_art.png?raw=true)
 
-[Project Read Me](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/README.md)
+[Project Read Me](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/README.md)  
+
+[View the live deployment](https://pulselinestudio.netlify.app/)
 
 ## Next ideas
 
