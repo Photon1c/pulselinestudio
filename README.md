@@ -1,6 +1,6 @@
 # Pulseline Studio
 
-![pulse_line](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/media/concept_art.png)
+![pulse_line](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/media/concept_art.png?raw=true)
 
 [Project Read Me](https://github.com/Photon1c/pulselinestudio/blob/main/csp-workflow/README.md)
 
