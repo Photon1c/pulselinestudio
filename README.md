@@ -17,3 +17,5 @@
 
 
 This repository is now maintained by Cursor and Cloudfare Agents 🤖.
+
+CSP stands for [Constraint Satisfaction Problems](https://en.wikipedia.org/wiki/Constraint_satisfaction_problem), mathematical frameworks built around objects whose states must obey a defined set of limitations. Much of workflow management is—whether we realize it or not—a living CSP: deadlines, capacities, parallel tasks, and feedback loops all jockey against constraints to find a workable solution. Platforms like Pulseline Studio help surface these interlocking limits, showing not just the path through the constraints, but how small changes propagate through the entire system.
