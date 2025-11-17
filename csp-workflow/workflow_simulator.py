@@ -45,7 +45,7 @@ SCENARIOS: Dict[str, Scenario] = {
     ),
     "lucy": Scenario(
         key="lucy",
-        label="I Love Lucy",
+        label="Workload Spike",
         description="Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.",
         min_duration=1,
         max_duration=3,
