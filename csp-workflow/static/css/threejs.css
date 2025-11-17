@@ -48,6 +48,22 @@ body {
   }
 }
 
+.flash-title__link {
+  text-decoration: none;
+  color: inherit;
+  display: inline-block;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.flash-title__link:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.flash-title__link:active {
+  transform: scale(0.98);
+}
+
 .flash-title__text {
   position: relative;
   z-index: 2;
@@ -217,12 +233,17 @@ body {
 }
 
 .panel {
-  padding: 0.85rem;
-  border-radius: 14px;
+  padding: 1rem;
+  border-radius: 16px;
   background: var(--panel);
   border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.3s ease;
+}
+
+.panel:hover {
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
 }
 
 .panel__header {
@@ -304,9 +325,11 @@ body {
 .panel h2,
 .panel h3 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #f7f9ff;
 }
 
 .control-grid {
@@ -456,19 +479,39 @@ body {
 .metrics {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
+  gap: 0.65rem;
 }
 
 @media (min-width: 480px) {
   .metrics {
     grid-template-columns: repeat(3, 1fr);
+    gap: 0.7rem;
   }
 }
 
 @media (min-width: 768px) {
   .metrics {
     grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
   }
+}
+
+/* Color coding for specific metrics */
+.metric:nth-child(1) strong {
+  color: #7ef29d; /* Utilization - green */
+}
+
+.metric:nth-child(2) strong,
+.metric:nth-child(3) strong {
+  color: #ff6b81; /* Backlog - red/pink */
+}
+
+.metric:nth-child(5) strong {
+  color: #78e8ff; /* Arrival Rate - cyan */
+}
+
+.metric:nth-child(6) strong {
+  color: #7ef29d; /* Throughput - green */
 }
 
 .metrics-panel {
@@ -502,28 +545,39 @@ body {
 }
 
 .metric {
-  padding: 0.45rem 0.5rem;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  min-height: 48px;
+  padding: 0.6rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 56px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.metric:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .metric span {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   text-transform: uppercase;
-  opacity: 0.65;
-  margin-bottom: 0.15rem;
-  line-height: 1.2;
+  opacity: 0.75;
+  margin-bottom: 0.25rem;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+  font-weight: 500;
 }
 
 .metric strong {
-  font-size: 1rem;
-  line-height: 1.2;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: #f7f9ff;
 }
 
 .legend {
@@ -544,15 +598,24 @@ body {
 .status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.35rem 0.6rem;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.45rem 0.75rem;
   border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.2s ease;
+  margin-top: 0.5rem;
+}
+
+.status-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(1.02);
 }
 
 .status-pill span {
   font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 .control-hint {
@@ -571,6 +634,22 @@ body {
   padding: 0.25rem 0.65rem;
   border-radius: 999px;
   opacity: 0.9;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.instructions-pill:hover {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(1.02);
+}
+
+.instructions-pill:active {
+  transform: scale(0.98);
 }
 
 .fps-counter {
@@ -610,7 +689,9 @@ body {
   height: 100%;
   width: 0%;
   background: linear-gradient(90deg, #78e8ff, #7ef29d);
-  transition: width 0.3s ease;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+  box-shadow: 0 0 8px rgba(126, 242, 157, 0.3);
+  border-radius: 999px;
 }
 
 .assistants-panel {
@@ -666,24 +747,170 @@ body {
   font-size: 0.92rem;
 }
 
-.controls-help p {
-  margin: 0;
-  font-size: 0.85rem;
-  opacity: 0.75;
-  line-height: 1.4;
-}
-
-#instructionsPanel {
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(6px);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.3s ease;
 }
 
-#instructionsPanel.is-visible {
+.modal-overlay.modal--visible {
   opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
+}
+
+.modal {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0;
+  max-width: 500px;
+  width: 90vw;
+  max-height: 85vh;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-overlay.modal--visible .modal {
+  transform: scale(1);
+}
+
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal__header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: #f7f9ff;
+}
+
+.modal__close {
+  background: transparent;
+  border: none;
+  color: #f7f9ff;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  padding: 0;
+}
+
+.modal__close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.modal__close:active {
+  transform: scale(0.95);
+}
+
+.modal__content {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal__content h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.modal__content p {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+.modal__content p:last-child {
+  margin-bottom: 0;
+}
+
+.modal__content strong {
+  color: #f7f9ff;
+  font-weight: 600;
+}
+
+/* Tooltip Styles */
+.mode-select-wrapper {
+  position: relative;
+}
+
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(5, 6, 10, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #f7f9ff;
+  max-width: 280px;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-4px);
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(5, 6, 10, 0.98);
+}
+
+.tooltip--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 @media (max-width: 900px) {
@@ -695,5 +922,20 @@ body {
 
   #viewport {
     height: 70vh;
+  }
+  
+  .tooltip {
+    max-width: 240px;
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .modal {
+    max-width: 95vw;
+    max-height: 90vh;
+  }
+  
+  .modal__content {
+    padding: 1.25rem;
   }
 }
