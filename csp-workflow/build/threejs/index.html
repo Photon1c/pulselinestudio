@@ -8,7 +8,9 @@
   </head>
   <body>
     <div class="flash-title">
-      <span class="flash-title__text">Pulseline Studio</span>
+      <a href="https://github.com/Photon1c/pulselinestudio/tree/main" target="_blank" rel="noopener noreferrer" class="flash-title__link">
+        <span class="flash-title__text">Pulseline Studio</span>
+      </a>
       <span class="flash-title__orb flash-title__orb--left"></span>
       <span class="flash-title__orb flash-title__orb--right"></span>
     </div>
@@ -53,23 +55,26 @@
               step="30"
             />
           </label>
-          <label>
+          <label class="mode-select-wrapper">
             Mode
-            <select id="modeSelect">
-              
-              <option value="standard" selected>
-                Balanced Ops
-              </option>
-              
-              <option value="focus" >
-                Deep Work Pods
-              </option>
-              
-              <option value="lucy" >
-                I Love Lucy
-              </option>
-              
-            </select>
+            <div class="tooltip-container">
+              <select id="modeSelect">
+                
+                <option value="standard" selected data-description="Classic operations floor where inflow roughly matches processing capacity.">
+                  Balanced Ops
+                </option>
+                
+                <option value="focus"  data-description="Fewer high-impact, longer tasks that test endurance instead of volume.">
+                  Deep Work Pods
+                </option>
+                
+                <option value="lucy"  data-description="Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.">
+                  Workload Spike
+                </option>
+                
+              </select>
+              <span class="tooltip" id="modeTooltip"></span>
+            </div>
           </label>
         </div>
         <div class="actions">
@@ -91,7 +96,7 @@
         </label>
         <div class="control-hint">
           <p class="legend">Utilization: calm → focus → overloaded</p>
-          <span class="instructions-pill">Press I for instructions</span>
+          <button class="instructions-pill" id="openInstructionsBtn" type="button">Press I for instructions</button>
         </div>
         
         
@@ -103,8 +108,12 @@
       </section>
 
       <section class="panel metrics-panel">
-        <h3>Live Metrics</h3>
-        <div class="metrics" id="metricsPanel">
+        <div class="panel__header">
+          <h3>Live Metrics</h3>
+          <button class="panel__collapse" id="collapseMetricsBtn"></button>
+        </div>
+        <div class="metrics-panel__content">
+          <div class="metrics" id="metricsPanel">
           <div class="metric">
             <span>Avg Utilization</span>
             <strong id="metric-util">0%</strong>
@@ -141,6 +150,7 @@
             <span>Flow Delta</span>
             <strong id="metric-flow">0</strong>
           </div>
+          </div>
         </div>
         <label class="slider-label compact">
           Belt Speed
@@ -167,16 +177,31 @@
         </div>
       </section>
 
-      <section class="panel controls-help" id="instructionsPanel" aria-hidden="true">
-        <h3>Navigation</h3>
-        <p>
-          Mouse drag = orbit · Scroll = zoom · Right-drag = pan
-          <br />
-          Keyboard: WASD to strafe, QE to elevate, R resets focus.
-          <br />
-          Use Run/Pause or press P to pause. Press I to hide/show this card.
-        </p>
-      </section>
+      <!-- Instructions Modal -->
+      <div class="modal-overlay" id="instructionsModal" aria-hidden="true">
+        <div class="modal">
+          <div class="modal__header">
+            <h3>Navigation & Controls</h3>
+            <button class="modal__close" id="closeInstructionsBtn" aria-label="Close instructions">×</button>
+          </div>
+          <div class="modal__content">
+            <h4>Camera Controls</h4>
+            <p>
+              <strong>Mouse:</strong> Drag to orbit · Scroll to zoom · Right-drag to pan
+            </p>
+            <p>
+              <strong>Keyboard:</strong> WASD to strafe · Q/E to elevate · R to reset camera
+            </p>
+            <h4>Simulation Controls</h4>
+            <p>
+              Use Run/Pause buttons or press <strong>P</strong> to pause/resume the simulation.
+            </p>
+            <p>
+              Press <strong>I</strong> to open/close this help window.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div id="viewport"></div>
@@ -191,7 +216,7 @@
       }
     </script>
     <script>
-      window.SCENARIO_META = {"focus": {"description": "Fewer high-impact, longer tasks that test endurance instead of volume.", "label": "Deep Work Pods"}, "lucy": {"description": "Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.", "label": "I Love Lucy"}, "standard": {"description": "Classic operations floor where inflow roughly matches processing capacity.", "label": "Balanced Ops"}};
+      window.SCENARIO_META = {"focus": {"description": "Fewer high-impact, longer tasks that test endurance instead of volume.", "label": "Deep Work Pods"}, "lucy": {"description": "Chocolate belt chaos: frantic inflow of small tasks that overwhelm slow processing.", "label": "Workload Spike"}, "standard": {"description": "Classic operations floor where inflow roughly matches processing capacity.", "label": "Balanced Ops"}};
       window.APP_CONFIG = {"defaults": {"max_minutes": 450, "mode": "standard", "num_agents": 8, "num_tasks": 220}, "limits": {"max_agents": 24, "max_minutes": 720, "max_tasks": 2000, "min_agents": 1, "min_minutes": 60, "min_tasks": 10}, "ui": {"auto_run_on_load": true, "speed_default": 1, "status_ready": "Ready \u00b7 Balanced Ops", "title": "Workflow Dynamics Lab"}};
     </script>
     <script type="module" src="/static/js/threejs_scene.js"></script>

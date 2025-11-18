@@ -17,7 +17,10 @@ const beltSlider = document.getElementById("beltSlider");
 const beltValue = document.getElementById("beltValue");
 const cycleBarFill = document.getElementById("cycleBarFill");
 const assistantsPanel = document.getElementById("assistantsPanel");
-const instructionsPanel = document.getElementById("instructionsPanel");
+const instructionsModal = document.getElementById("instructionsModal");
+const openInstructionsBtn = document.getElementById("openInstructionsBtn");
+const closeInstructionsBtn = document.getElementById("closeInstructionsBtn");
+const modeTooltip = document.getElementById("modeTooltip");
 const overlayToggle = document.getElementById("overlayToggle");
 const overlayEl = document.getElementById("overlay");
 const controlsPanel = document.querySelector(".panel--controls");
@@ -79,8 +82,11 @@ function initThree() {
   camera = new THREE.PerspectiveCamera(55, width / height, 0.1, 1000);
   camera.position.copy(introStartPosition);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
   renderer.setSize(width, height);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixel ratio for performance
   viewport.appendChild(renderer.domElement);
 
   controls = new OrbitControls(camera, renderer.domElement);
@@ -91,21 +97,49 @@ function initThree() {
 
   clock = new THREE.Clock();
 
-  const hemiLight = new THREE.HemisphereLight(0xb7c9ff, 0x0b0d14, 1.1);
+  // Enhanced lighting setup
+  const hemiLight = new THREE.HemisphereLight(0xb7c9ff, 0x0b0d14, 1.2);
   scene.add(hemiLight);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+  
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
   dirLight.position.set(30, 50, 20);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 2048;
+  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 200;
+  dirLight.shadow.camera.left = -50;
+  dirLight.shadow.camera.right = 50;
+  dirLight.shadow.camera.top = 50;
+  dirLight.shadow.camera.bottom = -50;
   scene.add(dirLight);
+  
+  // Additional fill light for better visibility
+  const fillLight = new THREE.DirectionalLight(0x7a8aff, 0.3);
+  fillLight.position.set(-20, 30, -15);
+  scene.add(fillLight);
+  
+  // Ambient light for overall scene brightness
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+  scene.add(ambientLight);
 
-  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  // Enhanced floor with grid pattern
+  const floorGeo = new THREE.PlaneGeometry(200, 200, 20, 20);
   const floorMat = new THREE.MeshStandardMaterial({
     color: 0x090c14,
     metalness: 0.2,
     roughness: 0.85,
+    emissive: 0x000000,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
   scene.add(floor);
+  
+  // Add subtle grid lines
+  const gridHelper = new THREE.GridHelper(200, 20, 0x1a1f2e, 0x0f1218);
+  gridHelper.position.y = 0.01;
+  scene.add(gridHelper);
 
   beltMesh = createBelt();
   queueGroup.add(beltMesh);
@@ -171,12 +205,17 @@ function createBelt() {
   const beltGeo = new THREE.BoxGeometry(32, 0.4, 3);
   const beltMat = new THREE.MeshStandardMaterial({
     color: 0x2a2d38,
-    metalness: 0.35,
-    roughness: 0.4,
+    metalness: 0.4,
+    roughness: 0.35,
+    emissive: 0x000000,
   });
   const belt = new THREE.Mesh(beltGeo, beltMat);
   belt.position.set(0, 0.2, -10);
   belt.receiveShadow = true;
+  belt.castShadow = true;
+  
+  // Add subtle moving texture effect
+  belt.userData.originalColor = beltMat.color.clone();
   return belt;
 }
 
@@ -193,19 +232,25 @@ function buildCubicles(layout) {
   layout.positions.forEach((pos) => {
     const deskMat = new THREE.MeshStandardMaterial({
       color: 0x1b1f2f,
-      metalness: 0.1,
-      roughness: 0.7,
+      metalness: 0.15,
+      roughness: 0.65,
+      emissive: 0x000000,
     });
     const desk = new THREE.Mesh(deskGeo, deskMat);
     desk.position.set(pos.x, 0.4, pos.z);
+    desk.castShadow = true;
+    desk.receiveShadow = true;
 
     const wallMat = new THREE.MeshStandardMaterial({
       color: 0x2c3148,
-      metalness: 0.05,
-      roughness: 0.9,
+      metalness: 0.08,
+      roughness: 0.85,
+      emissive: 0x000000,
     });
     const leftWall = new THREE.Mesh(wallGeo, wallMat);
     leftWall.position.set(pos.x - 1.5, 1, pos.z);
+    leftWall.castShadow = true;
+    leftWall.receiveShadow = true;
 
     const rightWall = leftWall.clone();
     rightWall.position.x = pos.x + 1.5;
@@ -221,27 +266,47 @@ function syncAgents(agents, layout) {
     if (!seat) return;
     let mesh = agentMeshes.get(agent.id);
     if (!mesh) {
+      // Enhanced agent geometry with better proportions
       const geo = new THREE.CylinderGeometry(0.5, 0.7, 2.2, 24);
       const mat = new THREE.MeshStandardMaterial({
         color: 0x7ef29d,
         emissive: 0x000000,
-        metalness: 0.3,
-        roughness: 0.4,
+        metalness: 0.4,
+        roughness: 0.35,
+        envMapIntensity: 1.0,
       });
       mesh = new THREE.Mesh(geo, mat);
       mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      
+      // Add a subtle glow effect using a point light
+      const glowLight = new THREE.PointLight(0x7ef29d, 0.3, 3);
+      glowLight.position.set(0, 1.1, 0);
+      mesh.add(glowLight);
+      
       agentsGroup.add(mesh);
       agentMeshes.set(agent.id, mesh);
       mesh.userData.wobbleOffset = Math.random() * Math.PI * 2;
+      mesh.userData.glowLight = glowLight;
     }
     const util = clamp(agent.utilization || 0, 0, 1);
-    mesh.material.color.set(colorFromUtil(util));
+    const utilColor = colorFromUtil(util);
+    mesh.material.color.set(utilColor);
+    // Update emissive based on utilization for glow effect
+    mesh.material.emissive.set(utilColor).multiplyScalar(0.15 * util);
     mesh.position.set(seat.x, 1.2, seat.z);
     mesh.scale.y = 0.9 + util * 0.8;
     mesh.userData.baseY = 1.2;
     mesh.userData.baseX = seat.x;
     mesh.userData.baseZ = seat.z;
     mesh.userData.util = util;
+    
+    // Update glow light intensity based on utilization
+    if (mesh.userData.glowLight) {
+      mesh.userData.glowLight.intensity = 0.2 + util * 0.4;
+      mesh.userData.glowLight.color.set(utilColor);
+    }
+    
     activeIds.add(agent.id);
   });
 
@@ -256,43 +321,86 @@ function syncAgents(agents, layout) {
 }
 
 function updateQueue(backlogCount, beltSpeed, arrivalRate, throughputRatio) {
-  queueBoxes.forEach((entry) => {
-    if (entry.mesh) {
-      queueGroup.remove(entry.mesh);
-      // Dispose of all children (briefcase body and handle)
-      entry.mesh.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) {
-            if (Array.isArray(child.material)) {
-              child.material.forEach((mat) => mat.dispose());
-            } else {
-              child.material.dispose();
+  // Performance: Only recreate if count changed significantly
+  const countDiff = Math.abs(backlogCount - queueState.backlogCount);
+  const needsFullUpdate = countDiff > 2 || queueBoxes.length === 0;
+  
+  if (needsFullUpdate) {
+    queueBoxes.forEach((entry) => {
+      if (entry.mesh) {
+        queueGroup.remove(entry.mesh);
+        // Dispose of all children (briefcase body and handle)
+        entry.mesh.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach((mat) => mat.dispose());
+              } else {
+                child.material.dispose();
+              }
             }
           }
+        });
+      }
+      if (entry.spacer) {
+        queueGroup.remove(entry.spacer);
+        if (entry.spacer.geometry) entry.spacer.geometry.dispose();
+        if (entry.spacer.material) {
+          if (Array.isArray(entry.spacer.material)) {
+            entry.spacer.material.forEach((mat) => mat.dispose());
+          } else {
+            entry.spacer.material.dispose();
+          }
         }
-      });
-    }
-    if (entry.spacer) {
-      queueGroup.remove(entry.spacer);
-      if (entry.spacer.geometry) entry.spacer.geometry.dispose();
-      if (entry.spacer.material) {
-        if (Array.isArray(entry.spacer.material)) {
-          entry.spacer.material.forEach((mat) => mat.dispose());
-        } else {
-          entry.spacer.material.dispose();
-        }
+      }
+    });
+    queueBoxes.length = 0;
+  }
+  
+  // Always update backlog stacks
+  backlogStacks.forEach((mesh) => {
+    backlogPileGroup.remove(mesh);
+    if (mesh.geometry) mesh.geometry.dispose();
+    if (mesh.material) {
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => mat.dispose());
+      } else {
+        mesh.material.dispose();
       }
     }
   });
-  queueBoxes.length = 0;
-  backlogStacks.forEach((mesh) => {
-    backlogPileGroup.remove(mesh);
-    mesh.geometry.dispose();
-    mesh.material.dispose();
-  });
   backlogStacks.length = 0;
 
+  if (!needsFullUpdate) {
+    // Just update existing queue boxes colors/positions
+    const inflowUnits = Math.max(Math.round(arrivalRate * 5), 4);
+    const displayCount = Math.min(backlogCount + inflowUnits, 24);
+    queueBoxes.forEach((entry, i) => {
+      const isBacklog = i < backlogCount;
+      entry.backlog = isBacklog;
+      if (entry.briefcaseBody) {
+        const severity = backlogCount ? i / Math.max(backlogCount, 1) : i / Math.max(displayCount, 1);
+        const color = isBacklog
+          ? severity > 0.66
+            ? 0xff5f5f
+            : severity > 0.33
+            ? 0xffc857
+            : 0xf4f991
+          : 0x78e8ff;
+        entry.briefcaseBody.material.color.set(color);
+        entry.briefcaseBody.material.emissive.set(isBacklog ? new THREE.Color(color).multiplyScalar(0.15) : 0x051012);
+      }
+    });
+    queueState.backlogCount = backlogCount;
+    queueState.speed = Math.max(0.5, beltSpeed);
+    queueState.arrivalRate = arrivalRate;
+    queueState.throughputRatio = throughputRatio;
+    beltMesh.material.color.set(backlogCount > 18 ? 0xff5f5f : backlogCount > 10 ? 0xffc857 : 0x2a2d38);
+    updateBacklogPile(backlogCount);
+    return;
+  }
+  
   const inflowUnits = Math.max(Math.round(arrivalRate * 5), 4);
   const displayCount = Math.min(backlogCount + inflowUnits, 24);
   const spacing = 2.2;
@@ -310,9 +418,9 @@ function updateQueue(backlogCount, beltSpeed, arrivalRate, throughputRatio) {
       : 0x78e8ff;
     const matBody = new THREE.MeshStandardMaterial({
       color,
-      emissive: isBacklog ? 0x1a0a0a : 0x051012,
-      metalness: 0.2,
-      roughness: 0.4,
+      emissive: isBacklog ? new THREE.Color(color).multiplyScalar(0.15) : 0x051012,
+      metalness: 0.3,
+      roughness: 0.35,
     });
     const matHandle = new THREE.MeshStandardMaterial({
       color: 0x151515,
@@ -320,7 +428,10 @@ function updateQueue(backlogCount, beltSpeed, arrivalRate, throughputRatio) {
       roughness: 0.25,
     });
     const briefcase = new THREE.Mesh(bodyGeo, matBody);
+    briefcase.castShadow = true;
+    briefcase.receiveShadow = true;
     const handle = new THREE.Mesh(handleGeo, matHandle);
+    handle.castShadow = true;
     handle.rotation.x = Math.PI / 2;
     handle.position.set(0, 0.55, 0);
     const group = new THREE.Group();
@@ -449,6 +560,7 @@ function formatNumber(value) {
 }
 
 function safeNumber(value) {
+  if (value === null || value === undefined) return 0;
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
 }
@@ -481,8 +593,10 @@ function updateMetricsPanel(data) {
   const throughputPct = Math.round(throughputRatio * 100);
   const processedMinutes = safeNumber(data.metrics?.processed_minutes || 0);
   const maxMinutes = safeNumber(data.parameters?.max_minutes || 0);
-  const completionRate = maxMinutes > 0 ? processedMinutes / maxMinutes : 0;
   const arrivalRate = safeNumber(data.metrics?.arrival_rate || 0);
+  // Calculate completion rate as tasks processed per minute
+  const completionRate = maxMinutes > 0 ? processedMinutes / maxMinutes : 0;
+  // Flow delta: positive means more arriving than completing (backlog growing)
   const flowDelta = safeNumber(arrivalRate - completionRate);
 
   if (metricUtil) metricUtil.textContent = `${utilPercent}%`;
@@ -610,6 +724,8 @@ function initUI() {
   applyConfigDefaults();
   setInstructionsVisible(false);
   setupOverlayControls();
+  setupModeTooltips();
+  setupInstructionsModal();
   playBtn.addEventListener("click", () => {
     if (isPaused && hasRun) {
       isPaused = false;
@@ -673,9 +789,77 @@ function setupOverlayControls() {
   if (controlsCollapseBtn && controlsPanel) {
     controlsCollapseBtn.addEventListener("click", () => {
       controlsPanel.classList.toggle("panel--collapsed");
-      controlsCollapseBtn.textContent = controlsPanel.classList.contains("panel--collapsed") ? "+" : "–";
     });
   }
+  const metricsCollapseBtn = document.getElementById("collapseMetricsBtn");
+  const metricsPanel = document.querySelector(".metrics-panel");
+  if (metricsCollapseBtn && metricsPanel) {
+    metricsCollapseBtn.addEventListener("click", () => {
+      metricsPanel.classList.toggle("panel--collapsed");
+    });
+  }
+}
+
+function setupModeTooltips() {
+  if (!modeSelect || !modeTooltip) return;
+  
+  function updateTooltip() {
+    const selectedOption = modeSelect.options[modeSelect.selectedIndex];
+    const description = selectedOption?.getAttribute("data-description") || "";
+    modeTooltip.textContent = description;
+  }
+  
+  modeSelect.addEventListener("change", updateTooltip);
+  modeSelect.addEventListener("focus", () => {
+    modeTooltip.classList.add("tooltip--visible");
+    updateTooltip();
+  });
+  modeSelect.addEventListener("blur", () => {
+    // Delay hiding to allow clicking on tooltip
+    setTimeout(() => {
+      modeTooltip.classList.remove("tooltip--visible");
+    }, 200);
+  });
+  modeSelect.addEventListener("mouseenter", () => {
+    modeTooltip.classList.add("tooltip--visible");
+    updateTooltip();
+  });
+  modeSelect.addEventListener("mouseleave", () => {
+    modeTooltip.classList.remove("tooltip--visible");
+  });
+  
+  // Initial tooltip update
+  updateTooltip();
+}
+
+function setupInstructionsModal() {
+  if (openInstructionsBtn) {
+    openInstructionsBtn.addEventListener("click", () => {
+      setInstructionsVisible(true);
+    });
+  }
+  
+  if (closeInstructionsBtn) {
+    closeInstructionsBtn.addEventListener("click", () => {
+      setInstructionsVisible(false);
+    });
+  }
+  
+  // Close modal when clicking overlay
+  if (instructionsModal) {
+    instructionsModal.addEventListener("click", (e) => {
+      if (e.target === instructionsModal) {
+        setInstructionsVisible(false);
+      }
+    });
+  }
+  
+  // Close modal with Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && instructionsVisible) {
+      setInstructionsVisible(false);
+    }
+  });
 }
 
 initThree();
@@ -728,13 +912,69 @@ function handleKeyboard(delta) {
   const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
   const up = new THREE.Vector3(0, 1, 0);
   const speed = 15 * delta;
+  const orbitSpeed = 2.5 * delta; // Rotation speed for arrow keys
 
+  // WASD movement
   if (keyState["KeyW"]) move.addScaledVector(forward, speed);
   if (keyState["KeyS"]) move.addScaledVector(forward, -speed);
   if (keyState["KeyA"]) move.addScaledVector(right, -speed);
   if (keyState["KeyD"]) move.addScaledVector(right, speed);
   if (keyState["KeyQ"]) move.addScaledVector(up, -speed);
   if (keyState["KeyE"]) move.addScaledVector(up, speed);
+
+  // Arrow keys for camera rotation/orbiting
+  if (keyState["ArrowLeft"]) {
+    // Rotate left around target
+    const angle = orbitSpeed;
+    const axis = new THREE.Vector3(0, 1, 0);
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  }
+  if (keyState["ArrowRight"]) {
+    // Rotate right around target
+    const angle = -orbitSpeed;
+    const axis = new THREE.Vector3(0, 1, 0);
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    camera.position.copy(controls.target).add(offset);
+    controls.update();
+  }
+  if (keyState["ArrowUp"]) {
+    // Rotate up (pitch)
+    const angle = orbitSpeed * 0.6;
+    const rightVec = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const upVec = new THREE.Vector3(0, 1, 0);
+    const forwardVec = new THREE.Vector3().crossVectors(rightVec, upVec).normalize();
+    const axis = forwardVec;
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    // Limit vertical rotation
+    const newOffset = new THREE.Vector3().subVectors(camera.position.clone().add(offset), controls.target);
+    const verticalAngle = Math.atan2(newOffset.y, Math.sqrt(newOffset.x * newOffset.x + newOffset.z * newOffset.z));
+    if (verticalAngle < Math.PI / 2.5 && verticalAngle > -Math.PI / 2.5) {
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+  }
+  if (keyState["ArrowDown"]) {
+    // Rotate down (pitch)
+    const angle = -orbitSpeed * 0.6;
+    const rightVec = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+    const upVec = new THREE.Vector3(0, 1, 0);
+    const forwardVec = new THREE.Vector3().crossVectors(rightVec, upVec).normalize();
+    const axis = forwardVec;
+    const offset = new THREE.Vector3().subVectors(camera.position, controls.target);
+    offset.applyAxisAngle(axis, angle);
+    // Limit vertical rotation
+    const newOffset = new THREE.Vector3().subVectors(camera.position.clone().add(offset), controls.target);
+    const verticalAngle = Math.atan2(newOffset.y, Math.sqrt(newOffset.x * newOffset.x + newOffset.z * newOffset.z));
+    if (verticalAngle < Math.PI / 2.5 && verticalAngle > -Math.PI / 2.5) {
+      camera.position.copy(controls.target).add(offset);
+      controls.update();
+    }
+  }
 
   if (move.lengthSq() > 0) {
     camera.position.add(move);
@@ -804,35 +1044,101 @@ function formatDuration(minutes) {
 
 function setInstructionsVisible(state) {
   instructionsVisible = !!state;
-  if (instructionsPanel) {
-    instructionsPanel.classList.toggle("is-visible", instructionsVisible);
-    instructionsPanel.setAttribute("aria-hidden", String(!instructionsVisible));
+  if (instructionsModal) {
+    instructionsModal.classList.toggle("modal--visible", instructionsVisible);
+    instructionsModal.setAttribute("aria-hidden", String(!instructionsVisible));
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = instructionsVisible ? "hidden" : "";
   }
 }
 
 function updateBacklogPile(backlogCount) {
-  if (backlogCount <= 0) return;
-  const layers = Math.min(Math.ceil(backlogCount / 12), 6);
-  for (let layer = 0; layer < layers; layer++) {
-    const count = Math.min(backlogCount - layer * 12, 12);
-    for (let i = 0; i < count; i++) {
-      const bookWidth = 0.6 + Math.random() * 0.4;
-      const bookHeight = 0.7 + Math.random() * 0.4;
-      const bookDepth = 0.9;
-      const geo = new THREE.BoxGeometry(bookWidth, bookHeight, bookDepth);
-      const hue = 0.02 + layer * 0.04 + i * 0.01;
-      const mat = new THREE.MeshStandardMaterial({
-        color: new THREE.Color().setHSL((hue % 1), 0.6, 0.55),
-        emissive: 0x0a0a0a,
-        roughness: 0.35,
-        metalness: 0.15,
-      });
-      const book = new THREE.Mesh(geo, mat);
-      book.position.set(-26 + i * 1.1 + (layer % 2) * 0.4, 0.35 + layer * 0.55, -13 + Math.sin(i) * 0.2);
-      book.rotation.y = (Math.random() - 0.5) * 0.4;
-      backlogPileGroup.add(book);
-      backlogStacks.push(book);
+  // Clear existing backlog visualization
+  backlogStacks.forEach((mesh) => {
+    backlogPileGroup.remove(mesh);
+    if (mesh.geometry) mesh.geometry.dispose();
+    if (mesh.material) {
+      if (Array.isArray(mesh.material)) {
+        mesh.material.forEach((mat) => mat.dispose());
+      } else {
+        mesh.material.dispose();
+      }
     }
+  });
+  backlogStacks.length = 0;
+  
+  if (backlogCount <= 0) return;
+  
+  // Improved backlog visualization with better stacking
+  const maxLayers = 8;
+  const itemsPerLayer = 10;
+  const layers = Math.min(Math.ceil(backlogCount / itemsPerLayer), maxLayers);
+  const baseX = -26;
+  const baseZ = -13;
+  const baseY = 0.35;
+  
+  for (let layer = 0; layer < layers; layer++) {
+    const itemsInLayer = Math.min(backlogCount - layer * itemsPerLayer, itemsPerLayer);
+    const layerOffset = layer * 0.6;
+    
+    for (let i = 0; i < itemsInLayer; i++) {
+      // Vary sizes for more realistic look
+      const width = 0.7 + Math.random() * 0.3;
+      const height = 0.8 + Math.random() * 0.3;
+      const depth = 1.0;
+      const geo = new THREE.BoxGeometry(width, height, depth);
+      
+      // Color based on backlog severity (redder = more backlog)
+      const itemIndex = layer * itemsPerLayer + i;
+      const severity = backlogCount > 0 ? itemIndex / Math.max(backlogCount, 1) : 0;
+      const hue = severity > 0.7 ? 0.0 : severity > 0.4 ? 0.08 : 0.15; // Red to orange to yellow
+      const saturation = 0.7 + severity * 0.2;
+      const lightness = 0.4 + (1 - severity) * 0.2;
+      
+      const mat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color().setHSL(hue, saturation, lightness),
+        emissive: new THREE.Color().setHSL(hue, saturation * 0.3, lightness * 0.1),
+        roughness: 0.3,
+        metalness: 0.2,
+      });
+      
+      const item = new THREE.Mesh(geo, mat);
+      item.castShadow = true;
+      item.receiveShadow = true;
+      
+      // Better positioning with staggered stacking
+      const xOffset = (i % itemsPerLayer) * 1.2;
+      const zOffset = Math.floor(i / itemsPerLayer) * 1.0;
+      const stagger = (layer % 2) * 0.5;
+      
+      item.position.set(
+        baseX + xOffset + stagger,
+        baseY + layerOffset + height / 2,
+        baseZ + zOffset + Math.sin(i * 0.5) * 0.3
+      );
+      
+      // Random rotation for natural look
+      item.rotation.y = (Math.random() - 0.5) * 0.5;
+      item.rotation.z = (Math.random() - 0.5) * 0.1;
+      
+      backlogPileGroup.add(item);
+      backlogStacks.push(item);
+    }
+  }
+  
+  // Add a warning glow for high backlog
+  if (backlogCount > 20) {
+    const glowGeo = new THREE.SphereGeometry(3, 16, 16);
+    const glowMat = new THREE.MeshStandardMaterial({
+      color: 0xff4444,
+      emissive: 0xff0000,
+      transparent: true,
+      opacity: 0.2,
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    glow.position.set(baseX + 5, baseY + layers * 0.3, baseZ);
+    backlogPileGroup.add(glow);
+    backlogStacks.push(glow);
   }
 }
 
