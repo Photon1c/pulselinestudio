@@ -13,6 +13,8 @@ const pauseBtn = document.getElementById("pauseBtn");
 const spikeBtn = document.getElementById("spikeBtn");
 const speedSlider = document.getElementById("speedSlider");
 const speedValue = document.getElementById("speedValue");
+const agentSpeedSlider = document.getElementById("agentSpeedSlider");
+const agentSpeedValue = document.getElementById("agentSpeedValue");
 const beltSlider = document.getElementById("beltSlider");
 const beltValue = document.getElementById("beltValue");
 const cycleBarFill = document.getElementById("cycleBarFill");
@@ -46,6 +48,7 @@ let renderer, scene, camera, controls, clock;
 let isPaused = false;
 let hasRun = false;
 let speedMultiplier = Number(speedSlider?.value) || 1;
+let agentSpeedMultiplier = Number(agentSpeedSlider?.value) || 1;
 let beltMultiplier = Number(beltSlider?.value) || appConfig?.ui?.belt_default || 1;
 let agentMotionBoost = 0;
 let instructionsVisible = false;
@@ -290,6 +293,7 @@ function syncAgents(agents, layout) {
       mesh.userData.glowLight = glowLight;
     }
     const util = clamp(agent.utilization || 0, 0, 1);
+    const agentSpeed = safeNumber(agent.speed_multiplier || agentSpeedMultiplier || 1);
     const utilColor = colorFromUtil(util);
     mesh.material.color.set(utilColor);
     // Update emissive based on utilization for glow effect
@@ -300,10 +304,11 @@ function syncAgents(agents, layout) {
     mesh.userData.baseX = seat.x;
     mesh.userData.baseZ = seat.z;
     mesh.userData.util = util;
+    mesh.userData.speedMultiplier = agentSpeed;
     
-    // Update glow light intensity based on utilization
+    // Update glow light intensity based on utilization and speed
     if (mesh.userData.glowLight) {
-      mesh.userData.glowLight.intensity = 0.2 + util * 0.4;
+      mesh.userData.glowLight.intensity = (0.2 + util * 0.4) * (0.8 + agentSpeed * 0.2);
       mesh.userData.glowLight.color.set(utilColor);
     }
     
@@ -492,6 +497,7 @@ async function runScenario(modeShortcut, triggerButton, silent = false) {
     max_minutes: Number(minutesInput.value),
     mode: modeShortcut || modeSelect.value,
     belt_multiplier: beltMultiplier,
+    agent_speed_multiplier: agentSpeedMultiplier,
   };
   console.log("runScenario called with payload:", {
     num_agents: payload.num_agents,
@@ -509,6 +515,7 @@ async function runScenario(modeShortcut, triggerButton, silent = false) {
       maxMinutes: payload.max_minutes,
       mode: payload.mode,
       beltMultiplier: payload.belt_multiplier,
+      agentSpeedMultiplier: payload.agent_speed_multiplier,
     });
     console.log("runWorkflowSimulation returned:", {
       agentsLength: data.agents?.length,
@@ -750,6 +757,23 @@ function initUI() {
     speedMultiplier = Number(speedSlider.value);
     if (speedValue) speedValue.textContent = `${speedMultiplier.toFixed(1)}x`;
   }
+  if (agentSpeedSlider) {
+    agentSpeedSlider.addEventListener("input", () => {
+      agentSpeedMultiplier = Number(agentSpeedSlider.value);
+      if (agentSpeedValue) {
+        agentSpeedValue.textContent = `${agentSpeedMultiplier.toFixed(1)}x`;
+      }
+    });
+    agentSpeedSlider.addEventListener("change", () => {
+      if (hasRun) {
+        runScenario();
+      }
+    });
+    agentSpeedMultiplier = Number(agentSpeedSlider.value);
+    if (agentSpeedValue) {
+      agentSpeedValue.textContent = `${agentSpeedMultiplier.toFixed(1)}x`;
+    }
+  }
   if (beltSlider) {
     beltSlider.addEventListener("input", () => {
       beltMultiplier = Number(beltSlider.value);
@@ -873,11 +897,13 @@ function animateAgents(elapsed) {
   agentMeshes.forEach((mesh) => {
     const offset = mesh.userData.wobbleOffset || 0;
     const util = mesh.userData.util || 0;
-    const speed = 1 + util * 1.8 + agentMotionBoost * 0.5;
+    const agentSpeed = mesh.userData.speedMultiplier || 1;
+    // Animation speed increases with both utilization and agent speed multiplier
+    const speed = (1 + util * 1.8 + agentMotionBoost * 0.5) * agentSpeed;
     const wobble = Math.sin(elapsed * speed + offset) * (wobbleAmp * (1 + util));
     mesh.position.y = (mesh.userData.baseY || 1.2) + wobble;
-    mesh.rotation.z = Math.sin(elapsed * (0.8 + util) + offset) * wobbleAmp * 0.6;
-    mesh.rotation.x = Math.cos(elapsed * (0.6 + util * 0.5) + offset) * wobbleAmp * 0.4;
+    mesh.rotation.z = Math.sin(elapsed * (0.8 + util) * agentSpeed + offset) * wobbleAmp * 0.6;
+    mesh.rotation.x = Math.cos(elapsed * (0.6 + util * 0.5) * agentSpeed + offset) * wobbleAmp * 0.4;
   });
 }
 

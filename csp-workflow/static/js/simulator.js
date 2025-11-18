@@ -144,17 +144,27 @@ export function runWorkflowSimulation({
   maxMinutes,
   mode = "standard",
   beltMultiplier = 1,
+  agentSpeedMultiplier = 1,
 }) {
-  console.log("runWorkflowSimulation called with:", { numAssistants, numTasks, maxMinutes, mode, beltMultiplier });
+  console.log("runWorkflowSimulation called with:", { numAssistants, numTasks, maxMinutes, mode, beltMultiplier, agentSpeedMultiplier });
   const scenario = SCENARIOS[mode] || SCENARIOS.standard;
   const beltFactor = Math.max(0.2, Number(beltMultiplier) || 1);
+  const agentSpeedFactor = Math.max(0.1, Number(agentSpeedMultiplier) || 1);
   const adjustedTasks = Math.max(1, Math.round(numTasks * scenario.task_multiplier * beltFactor));
   const tasks = generateTasks(adjustedTasks, scenario.min_duration, scenario.max_duration);
+  
+  // Apply agent speed multiplier: faster agents process tasks faster (reduce task duration)
+  const adjustedTasksForSpeed = tasks.map(task => Math.max(0.1, task / agentSpeedFactor));
+  
   const { assistants, assistantTimes, backlog, feasible } = assignTasksToAssistants(
-    tasks,
+    adjustedTasksForSpeed,
     numAssistants,
     maxMinutes
   );
+  
+  // Convert back to original task durations for display, but keep adjusted times for calculations
+  const originalAssistants = assistants.map(stack => stack.map(duration => duration * agentSpeedFactor));
+  const originalBacklog = backlog.map(duration => duration * agentSpeedFactor);
   console.log("assignTasksToAssistants returned:", {
     assistantsLength: assistants.length,
     assistantTimesLength: assistantTimes.length,
@@ -162,19 +172,20 @@ export function runWorkflowSimulation({
   });
   const stats = analyzeAssignments(assistantTimes, maxMinutes);
   const timeline = buildTimeline(assistants);
-  const backlogMinutes = backlog.reduce((sum, val) => sum + val, 0);
-  const processedMinutes = assistantTimes.reduce((sum, val) => sum + val, 0);
+  const backlogMinutes = originalBacklog.reduce((sum, val) => sum + val, 0);
+  const processedMinutes = assistantTimes.reduce((sum, val) => sum + val, 0) * agentSpeedFactor;
   const throughputRatio = processedMinutes
     ? processedMinutes / (processedMinutes + backlogMinutes)
     : 0;
   const arrivalRate = maxMinutes ? Number((adjustedTasks / maxMinutes).toFixed(3)) : adjustedTasks;
   const beltSpeed = scenario.belt_speed * beltFactor;
   const layout = buildOfficeLayout(assistants.length);
-  const agentsPayload = assistants.map((stack, idx) => ({
+  const agentsPayload = originalAssistants.map((stack, idx) => ({
     id: idx,
     tasks: stack,
-    total_time: assistantTimes[idx],
+    total_time: assistantTimes[idx] * agentSpeedFactor, // Convert back for display
     utilization: stats.utilization_by_agent[idx] || 0,
+    speed_multiplier: agentSpeedFactor,
   }));
 
   console.log("runWorkflowSimulation returning:", {
@@ -200,9 +211,9 @@ export function runWorkflowSimulation({
     stats,
     office_layout: layout,
     backlog: {
-      count: backlog.length,
+      count: originalBacklog.length,
       total_minutes: backlogMinutes,
-      tasks: backlog.slice(0, 100),
+      tasks: originalBacklog.slice(0, 100),
     },
     metrics: {
       processed_minutes: processedMinutes,
